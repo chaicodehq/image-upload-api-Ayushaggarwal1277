@@ -12,6 +12,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * TODO: Create Express app
  *
  * 1. Create app with express()
+ *
  * 2. Add express.json() middleware
  * 3. Create uploads directories if they don't exist:
  *    - uploads/
@@ -20,9 +21,26 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * 4. Add GET /health route → { ok: true }
  * 5. Mount image routes at /api/images
  * 6. Add notFound middleware
+ * 
  * 7. Add errorHandler middleware (must be last!)
  * 8. Return app
  */
 export function createApp() {
   // Your code here
+  const app = express();
+
+  app.use(express.json());
+  fs.mkdirSync(path.join(__dirname, 'uploads/thumbnails'), {recursive: true});
+
+  app.get('/health', (req,res) => {
+    res.status(200).json({
+      ok : true,
+    })
+  })
+
+  app.use('/api/images', imageRoutes);
+  app.use(notFound);
+  app.use(errorHandler);
+
+  return app;
 }

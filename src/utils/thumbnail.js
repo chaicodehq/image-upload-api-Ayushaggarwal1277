@@ -1,3 +1,4 @@
+import fs from 'fs';
 import sharp from 'sharp';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -13,7 +14,7 @@ const THUMBNAILS_DIR = path.join(__dirname, '../../uploads/thumbnails');
  * 2. Create thumbnail name: "thumb-{filename}.jpg" (always .jpg extension)
  *    Example: "1704067200000-abc123.png" → "thumb-1704067200000-abc123.jpg"
  * 3. Construct output path: uploads/thumbnails/{thumbnailName}
- * 4. Use sharp to resize image:
+ * 4. Use sharp to resize image: 
  *    - Max dimensions: 200x200
  *    - fit: 'inside' (maintain aspect ratio)
  *    - withoutEnlargement: true (don't make small images larger)
@@ -36,6 +37,36 @@ const THUMBNAILS_DIR = path.join(__dirname, '../../uploads/thumbnails');
  */
 export async function generateThumbnail(filename) {
   // Your code here
+  // Construct input path
+  try {
+    
+    const inputPath = path.join(__dirname, '../../uploads', filename);
+    // Create thumbnail name
+    const thumbnailName = 'thumb-' + filename.replace(/\.\w+$/, '.jpg');
+    // Construct output path
+    const outputPath = path.join(THUMBNAILS_DIR, thumbnailName);
+  
+    await sharp(inputPath).resize({
+      width: 200,
+      height: 200,
+      fit: 'inside',
+      withoutEnlargement: true,
+    }).jpeg({ quality: 80 }).toFile(outputPath);
+
+    const originalSize = fs.statSync(inputPath).size;
+    const thumbnailSize = fs.statSync(outputPath).size;
+    const isJpeg = /\.jpe?g$/i.test(filename);
+    if (thumbnailSize > originalSize && isJpeg) {
+      fs.copyFileSync(inputPath, outputPath);
+    }
+  
+    return thumbnailName;
+  } catch (error) {
+    console.error('Error generating thumbnail:', error);
+    throw error; 
+  }
+  
+  
 }
 
 /**
@@ -59,4 +90,9 @@ export async function generateThumbnail(filename) {
  */
 export async function getImageDimensions(filepath) {
   // Your code here
+  const metadata = await sharp(filepath).metadata();
+  return {
+    width: metadata.width,
+    height: metadata.height
+  };
 }
